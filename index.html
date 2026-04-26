@@ -28,6 +28,24 @@
   --r: 10px;
   --r-lg: 14px;
 }
+
+/* SEARCH */
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-input{width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:6px 14px 6px 34px;font-family:'DM Sans',sans-serif;font-size:0.82rem;color:var(--text);outline:none;transition:all 0.2s;}
+.search-input:focus{width:260px;border-color:var(--blue);background:white;box-shadow:0 0 0 3px rgba(43,92,230,0.1);}
+.search-input::placeholder{color:var(--muted2);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:0.85rem;pointer-events:none;}
+.search-results{position:absolute;top:calc(100% + 8px);left:0;right:0;background:white;border:1px solid var(--border);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:200;display:none;max-height:320px;overflow-y:auto;min-width:300px;}
+.search-results.open{display:block;}
+.sr-item{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.sr-item:last-child{border-bottom:none;}
+.sr-item:hover{background:var(--blue-light);}
+.sr-section{font-size:0.7rem;font-weight:700;color:var(--blue);background:var(--blue-light);border-radius:4px;padding:2px 7px;white-space:nowrap;margin-top:2px;height:fit-content;}
+.sr-text{font-size:0.83rem;color:var(--text2);line-height:1.4;}
+.sr-text strong{color:var(--blue);}
+.sr-empty{padding:16px 14px;font-size:0.84rem;color:var(--muted);text-align:center;}
+.highlight-flash{animation:hflash 1.5s ease;}
+@keyframes hflash{0%{background:rgba(43,92,230,0.15)}100%{background:transparent}}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
@@ -244,6 +262,11 @@ footer{background:var(--text);color:#9CA3AF;padding:28px 0;}
     <li><a href="#about">About Us</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search..." autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
 </nav>
 
 <!-- HOME -->
@@ -825,14 +848,19 @@ footer{background:var(--text);color:#9CA3AF;padding:28px 0;}
 
       <div class="form-card fade">
         <h3>Send a Message</h3>
-        <div class="form-row">
-          <div class="fgrp"><label>First Name</label><input type="text" placeholder="John"></div>
-          <div class="fgrp"><label>Last Name</label><input type="text" placeholder="Doe"></div>
+        <div id="form-success" style="display:none;background:#DCFCE7;border:1px solid #86EFAC;border-radius:var(--r);padding:16px;text-align:center;margin-bottom:16px;">
+          <p style="color:#15803D;font-weight:600;font-size:0.9rem;">✅ Message sent! We'll get back to you soon.</p>
         </div>
-        <div class="fgrp"><label>Email Address</label><input type="email" placeholder="john@example.com"></div>
-        <div class="fgrp"><label>Subject</label><input type="text" placeholder="Research inquiry"></div>
-        <div class="fgrp"><label>Message</label><textarea placeholder="Write your message here..."></textarea></div>
-        <button class="btn-submit">Send Message</button>
+        <form id="contactForm" action="https://formspree.io/f/mojyzqew" method="POST">
+          <div class="form-row">
+            <div class="fgrp"><label>First Name</label><input type="text" name="firstName" placeholder="John" required></div>
+            <div class="fgrp"><label>Last Name</label><input type="text" name="lastName" placeholder="Doe" required></div>
+          </div>
+          <div class="fgrp"><label>Email Address</label><input type="email" name="email" placeholder="john@example.com" required></div>
+          <div class="fgrp"><label>Subject</label><input type="text" name="subject" placeholder="Research inquiry"></div>
+          <div class="fgrp"><label>Message</label><textarea name="message" placeholder="Write your message here..." required></textarea></div>
+          <button type="submit" class="btn-submit" id="submitBtn">Send Message</button>
+        </form>
       </div>
     </div>
   </div>
@@ -848,6 +876,7 @@ footer{background:var(--text);color:#9CA3AF;padding:28px 0;}
 </footer>
 
 <script>
+// ── TAB SWITCHER ──
 function tab(e,id){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
@@ -858,10 +887,95 @@ function tab(e,id){
     setTimeout(()=>el.classList.add('in'),50);
   });
 }
+
+// ── SCROLL FADE IN ──
 const io=new IntersectionObserver(entries=>{
   entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('in');});
 },{threshold:0.08});
 document.querySelectorAll('.fade').forEach(el=>io.observe(el));
+
+// ── SEARCH ──
+const searchIndex=[
+  {section:'Home',anchor:'home',text:'ACAS Automated Credibility Accuracy Assessment News multimodal AI social media misinformation'},
+  {section:'Domain',anchor:'domain',text:'Literature Survey CLIP vision language models multimodal fake news detection explainable AI XAI privacy NLP image authenticity CNN'},
+  {section:'Domain',anchor:'domain',text:'Research Gap privacy enforcement explainability OCR embedded text siloed components generalization real world'},
+  {section:'Domain',anchor:'domain',text:'Research Problem privacy preservation text AI detection image authenticity image text alignment misinformation'},
+  {section:'Domain',anchor:'domain',text:'Objectives PII agent orchestration CrewAI text detection CNN CLIP Grad-CAM XAI dashboard evaluation'},
+  {section:'Domain',anchor:'domain',text:'Methodology privacy gateway PII agent CrewAI flow orchestration text AI detection image CNN forensic analysis CLIP similarity evaluation'},
+  {section:'Domain',anchor:'domain',text:'Technologies Python FastAPI CrewAI MongoDB PyTorch TensorFlow CLIP OpenCV Scikit-learn NumPy Pandas Colab'},
+  {section:'Milestones',anchor:'milestones',text:'Project Proposal Progress Presentation Final Report Viva Voce timeline assessment marks completed upcoming'},
+  {section:'Documents',anchor:'documents',text:'Project Charter Proposal Checklist Final Report Main Group Report documents download view'},
+  {section:'Presentations',anchor:'presentations',text:'Proposal Presentation Progress Presentation 1 2 Final Presentation slides Canva'},
+  {section:'About Us',anchor:'about',text:'Sathsara Kehelwatta Ranasinghe Privacy Orchestration Text AI Detection Image Authenticity Similarity team members supervisors Dushanthi Kuruppu Aruna Gamage'},
+  {section:'Contact',anchor:'contact',text:'Contact email SLIIT Malabe Campus message form IT4010 research project'},
+];
+
+const inp=document.getElementById('searchInput');
+const res=document.getElementById('searchResults');
+
+function highlight(text,q){
+  if(!q)return text;
+  const re=new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re,'<strong>$1</strong>');
+}
+
+inp.addEventListener('input',()=>{
+  const q=inp.value.trim().toLowerCase();
+  if(q.length<2){res.classList.remove('open');res.innerHTML='';return;}
+  const hits=searchIndex.filter(item=>item.text.toLowerCase().includes(q)||item.section.toLowerCase().includes(q));
+  if(hits.length===0){
+    res.innerHTML='<div class="sr-empty">No results found for "'+inp.value+'"</div>';
+    res.classList.add('open');return;
+  }
+  const seen=new Set();
+  const unique=hits.filter(h=>{if(seen.has(h.section+h.anchor))return false;seen.add(h.section+h.anchor);return true;});
+  res.innerHTML=unique.map(h=>`
+    <div class="sr-item" onclick="goTo('${h.anchor}','${inp.value}')">
+      <span class="sr-section">${h.section}</span>
+      <span class="sr-text">${highlight(h.text.substring(0,80),inp.value)}...</span>
+    </div>`).join('');
+  res.classList.add('open');
+});
+
+function goTo(anchor,query){
+  res.classList.remove('open');
+  inp.value=query;
+  const el=document.getElementById(anchor);
+  if(el){
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+    setTimeout(()=>{el.classList.add('highlight-flash');setTimeout(()=>el.classList.remove('highlight-flash'),1500);},400);
+  }
+}
+
+document.addEventListener('click',e=>{if(!e.target.closest('.search-wrap'))res.classList.remove('open');});
+inp.addEventListener('keydown',e=>{if(e.key==='Escape'){res.classList.remove('open');inp.blur();}});
+
+// ── CONTACT FORM (Formspree) ──
+const form=document.getElementById('contactForm');
+const successMsg=document.getElementById('form-success');
+const submitBtn=document.getElementById('submitBtn');
+
+form.addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  submitBtn.textContent='Sending...';
+  submitBtn.disabled=true;
+  try{
+    const data=new FormData(form);
+    const resp=await fetch(form.action,{method:'POST',body:data,headers:{Accept:'application/json'}});
+    if(resp.ok){
+      successMsg.style.display='block';
+      form.reset();
+      submitBtn.textContent='Message Sent ✓';
+      setTimeout(()=>{successMsg.style.display='none';submitBtn.textContent='Send Message';submitBtn.disabled=false;},5000);
+    }else{
+      submitBtn.textContent='Failed — Try Again';
+      submitBtn.disabled=false;
+    }
+  }catch{
+    submitBtn.textContent='Failed — Try Again';
+    submitBtn.disabled=false;
+  }
+});
 </script>
 </body>
 </html>
